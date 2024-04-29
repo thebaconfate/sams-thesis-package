@@ -261,5 +261,4 @@ ui-tests/playwright-report
 ui-tests/.yarn/*
 ui-tests/.pnp.*
 
-resources/data/**
-resources/out/**
+resources/obse/*/*
