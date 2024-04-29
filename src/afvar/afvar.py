@@ -16,6 +16,11 @@ def save_csv(lf: pl.LazyFrame, filename: str) -> None:
     common.save_csv(lf, OUT_DIR, filename)
 
 
+def save_excel(lf: pl.LazyFrame, filename: str):
+    """Saves a LazyFrame object to an excel file"""
+    common.save_excel(lf, OUT_DIR, filename)
+
+
 def clean_lf(
     lf: pl.LazyFrame, headers: list[str], tz_rt_ts_headers_allowed: bool = True
 ) -> pl.LazyFrame:
