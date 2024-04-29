@@ -31,4 +31,4 @@ Keep note of the circled part, you will need it to select the kernel. In the rig
 
 ### OBSE survery
 
-in src/obse.ipynb you will find the code for the OBSE survey. You shouldn't really need to know what the code does, you just need to run it once so it creates the necesarry directories. After that you can place the CSV files in the resources/data directory and run the code again to process the data. The results will be saved in the resources/out directory
+in src/obse_main.ipynb you will find the code for the OBSE survey. You shouldn't really need to know what the code does, you just need to run it once so it creates the necesarry directories. After that you can place the CSV files in the resources/data directory and run the code again to process the data. The results will be saved in the resources/out directory
