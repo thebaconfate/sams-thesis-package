@@ -1,4 +1,3 @@
-from ast import Str
 import polars as pl
 from pathlib import Path
 from common import common
@@ -14,9 +13,6 @@ if IN_DIR.exists() is False:
     IN_DIR.mkdir()
 if OUT_DIR.exists() is False:
     OUT_DIR.mkdir()
-print(f"{IN_DIR.exists()} {OUT_DIR.exists()}")
-for filename in IN_DIR.iterdir():
-    print(filename)
 
 
 def load_csv(filename: str) -> pl.LazyFrame:
@@ -28,24 +24,49 @@ def save_csv(lf: pl.LazyFrame, filename: str) -> None:
     """saves a DataFrame object to a csv file"""
     common.save_csv(lf, OUT_DIR, filename)
 
-def tz_rt_ts_headers(lf : pl.LazyFrame) -> list[str]:
-    """Creates a list containing all headers with _TZ, _RT or _TS in them Feel free to edit"""
-    return [
-        i for i in lf.columns if "_TZ" in i or "_RT" in i or "_TS" in i
-    ]
 
-def delete_headers(lf: pl.LazyFrame, headers : list[str], tz_rt_ts_headers_allowed: bool=True) -> pl.LazyFrame:
-    """Deletes headers from a LazyFrame object"""
+def clean_lf(
+    lf: pl.LazyFrame, headers: list[str], tz_rt_ts_headers_allowed: bool = True
+) -> pl.LazyFrame:
+    """Deletes headers from a LazyFrame object and selects only the records where ACTIVITEIT is equal to 1"""
     if tz_rt_ts_headers_allowed:
-        return lf.drop(headers)
+        return lf.drop(headers).filter(pl.col("ACTIVITEIT") == 1)
     else:
-        return lf.drop(headers + tz_rt_ts_headers(lf))
-
-def select_by_activity(lf: pl.LazyFrame) -> pl.LazyFrame:
-    """Selects all the recors where ACTIVITEIT is 1"""
-    return lf.filter(pl.col("ACTIVITEIT") == 1)
+        return lf.drop(headers + common.tz_rt_ts_headers(lf)).filter(
+            pl.col("ACTIVITEIT") == 1
+        )
 
 
-def select_by_name(df: DataFrame, participant_id: str) -> DataFrame:
+def select_valid_participants(lf: pl.LazyFrame) -> list[str]:
+    """Selects all participants that have at least 5 records returns a list of the participant_ids"""
+    return (
+        lf.group_by("PARTICIPANT_ID")
+        .len()
+        .filter(pl.col("len") >= 5)
+        .select(pl.col("PARTICIPANT_ID"))
+        .collect()
+        .to_dict(as_series=False)["PARTICIPANT_ID"]
+    )
+
+
+def select_by_ids(lf: pl.LazyFrame, participant_ids: list[str]) -> pl.LazyFrame:
     """Selects all records where the PARTICIPANT_ID is equal to the fiven participant_id"""
-    return df.loc[df["PARTICIPANT_ID"] == participant_id]
+    return lf.filter(pl.col("PARTICIPANT_ID").is_in(participant_ids))
+
+
+def add_mean(lf: pl.LazyFrame, headers: list[str]) -> pl.LazyFrame:
+    """Adds a new column to the DataFrame containing the mean of the columns in headers"""
+    keep = [i for i in lf.columns if i not in headers]
+    lf = lf.select(keep + [pl.col(i).cast(pl.UInt64) for i in headers])
+    return lf.with_columns(mean=(sum([pl.col(i) for i in headers]) / len(headers)))
+
+
+def process_obse(headers: list[str]):
+    for filename in IN_DIR.iterdir():
+        lf = load_csv(filename.name)
+        lf = clean_lf(lf, headers, False)
+        participant_ids = select_valid_participants(lf)
+        lf = select_by_ids(lf, participant_ids)
+        lf = add_mean(lf, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"])
+        save_csv(lf, filename.name)
+    print("Files processed successfully!")

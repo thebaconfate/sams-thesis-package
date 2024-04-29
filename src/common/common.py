@@ -12,3 +12,7 @@ def save_csv(lf: pl.LazyFrame, dir: Path, filename: str) -> None:
     if dir.exists() is False:
         dir.mkdir()
     lf.collect().write_csv(f"{dir.as_posix()}/{filename}")
+
+def tz_rt_ts_headers(lf: pl.LazyFrame) -> list[str]:
+    """Creates a list containing all headers with _TZ, _RT or _TS in them Feel free to edit"""
+    return [i for i in lf.columns if "_TZ" in i or "_RT" in i or "_TS" in i]
