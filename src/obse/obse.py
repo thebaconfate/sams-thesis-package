@@ -61,7 +61,7 @@ def process_obse(lf: pl.LazyFrame, headers: list[str], tz_rt_ts_headers_allowed=
     lf = clean_lf(lf, headers, tz_rt_ts_headers_allowed)
     participant_ids = select_valid_participants(lf)
     lf = select_by_ids(lf, participant_ids)
-    return add_mean(lf, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"])
+    return add_mean(lf, [str(i) for i in range(1, 11)])
 
 
 def create_daily_means(lf: pl.LazyFrame) -> pl.LazyFrame:
