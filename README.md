@@ -1,4 +1,4 @@
-# Sam's Thesis data processor
+# Sam's Thesis data processor/cleaner
 
 This is a simple data processor for Sam's thesis data. It reads the data from a CSV file, processes it and saves the results in a new CSV file.
 
