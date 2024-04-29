@@ -74,8 +74,7 @@ def create_daily_means(lf: pl.LazyFrame) -> pl.LazyFrame:
     )
     dct = {"PARTICIPANT_ID": pl.String}
     for day in range(1, max_days + 1):
-        dct["DAY_"+str(day)] = pl.Float64()
+        dct["DAY_"+str(day)] = pl.Float64
     daily_means = pl.LazyFrame(schema=dct)
-    
     return daily_means
 
