@@ -4,16 +4,13 @@ from common import common
 
 # ! GLOBAL CONSTANTS: DO NOT TOUCH
 
-OUT_DIR = Path("../resources/obse/out")
+OUT_DIR = Path("../resources/out/obse")
+if OUT_DIR.parent.parent.exists() is False:
+    OUT_DIR.parent.parent.mkdir()
 if OUT_DIR.parent.exists() is False:
     OUT_DIR.parent.mkdir()
 if OUT_DIR.exists() is False:
     OUT_DIR.mkdir()
-
-
-def load_csv(filename: str) -> pl.LazyFrame:
-    """reads data from a csv file and returns a DataFrame object"""
-    return common.load_csv(common.IN_DIR, filename)
 
 
 def save_csv(lf: pl.LazyFrame, filename: str) -> None:
@@ -54,10 +51,16 @@ def add_mean(lf: pl.LazyFrame, headers: list[str]) -> pl.LazyFrame:
     """Adds a new column to the DataFrame containing the mean of the columns in headers"""
     keep = [i for i in lf.columns if i not in headers]
     lf = lf.select(keep + [pl.col(i).cast(pl.UInt64) for i in headers])
-    return lf.with_columns(mean=(sum([pl.col(i) for i in headers]) / len(headers)))
+    return lf.with_columns(MEAN=(sum([pl.col(i) for i in headers]) / len(headers)))
 
 
-def process_obse(lf: pl.LazyFrame, headers: list[str], tz_rt_ts_headers_allowed=True) -> pl.LazyFrame:
+def is_obse_survey(lf: pl.LazyFrame) -> bool:
+    return lf.filter(pl.col("SURVEY_NAME") == "OBSE").collect().shape[0] > 1
+
+
+def process_obse(
+    lf: pl.LazyFrame, headers: list[str], tz_rt_ts_headers_allowed=True
+) -> pl.LazyFrame:
     lf = clean_lf(lf, headers, tz_rt_ts_headers_allowed)
     participant_ids = select_valid_participants(lf)
     lf = select_by_ids(lf, participant_ids)
@@ -72,9 +75,22 @@ def create_daily_means(lf: pl.LazyFrame) -> pl.LazyFrame:
         .collect()
         .to_dict(as_series=False)["len"][0]
     )
-    dct = {"PARTICIPANT_ID": pl.String}
-    for day in range(1, max_days + 1):
-        dct["DAY_"+str(day)] = pl.Float64
-    daily_means = pl.LazyFrame(schema=dct)
-    return daily_means
-
+    new_headers = ["PARTICIPANT_ID"] + ["DAY_" + str(i) for i in range(1, max_days + 1)]
+    schema = {k: pl.String if k.endswith("ID") else pl.Float64 for k in new_headers}
+    dicts = (
+        lf.sort("COMPLETED_TS")
+        .group_by("PARTICIPANT_ID", maintain_order=True)
+        .agg(pl.col("MEAN").gather_every(1))
+        .collect()
+        .to_dicts()
+    )
+    records = []
+    for dict in dicts:
+        record = (
+            [dict["PARTICIPANT_ID"]]
+            + [mean for mean in dict["MEAN"]]
+            + [None for _ in range(max_days - len(dict["MEAN"]))]
+        )
+        record = {new_headers[i]: record[i] for i in range(len(record))}
+        records.append(record)
+    return pl.concat([pl.DataFrame(record, schema=schema).lazy() for record in records])

@@ -25,10 +25,15 @@ poetry shell
 Normally you should see something like this:
 ![No text, just deal with it](resources/img/virtenv.png)
 Keep note of the circled part, you will need it to select the kernel. In the right upper corner (assuming you're using Visual Studio Code) you will be able to select a kernel. Click on it and select the one with the same name as the circled part.
+
 ![No text, just deal with it](resources/img/select_kernel.png)
 
 ## Usage
 
 ### OBSE survery
 
-in src/obse_main.ipynb you will find the code for the OBSE survey. You shouldn't really need to know what the code does, you just need to run it once so it creates the necesarry directories. After that you can place the CSV files in the resources/data directory and run the code again to process the data. The results will be saved in the resources/out directory
+in src/obse_main.ipynb you will find the code for the OBSE survey. You shouldn't really need to know what the code does, you just need to run it once so it creates the necesarry directories. After that you can place the CSV files in the resources/in directory
+
+ ![No](resources/img/indir.png)
+
+and run the code again to process the data. The results will be saved in the resources/out/afvar or obse directory, respectively.
