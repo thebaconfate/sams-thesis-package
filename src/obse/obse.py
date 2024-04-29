@@ -3,21 +3,17 @@ from pathlib import Path
 from common import common
 
 # ! GLOBAL CONSTANTS: DO NOT TOUCH
-IN_DIR = Path("../resources/obse/data")
+
 OUT_DIR = Path("../resources/obse/out")
-if IN_DIR.parent.parent.exists() is False:
-    IN_DIR.parent.parent.mkdir()
-if IN_DIR.parent.exists() is False:
-    IN_DIR.parent.mkdir()
-if IN_DIR.exists() is False:
-    IN_DIR.mkdir()
+if OUT_DIR.parent.exists() is False:
+    OUT_DIR.parent.mkdir()
 if OUT_DIR.exists() is False:
     OUT_DIR.mkdir()
 
 
 def load_csv(filename: str) -> pl.LazyFrame:
     """reads data from a csv file and returns a DataFrame object"""
-    return common.load_csv(IN_DIR, filename)
+    return common.load_csv(common.IN_DIR, filename)
 
 
 def save_csv(lf: pl.LazyFrame, filename: str) -> None:
@@ -61,12 +57,25 @@ def add_mean(lf: pl.LazyFrame, headers: list[str]) -> pl.LazyFrame:
     return lf.with_columns(mean=(sum([pl.col(i) for i in headers]) / len(headers)))
 
 
-def process_obse(headers: list[str]):
-    for filename in IN_DIR.iterdir():
-        lf = load_csv(filename.name)
-        lf = clean_lf(lf, headers, False)
-        participant_ids = select_valid_participants(lf)
-        lf = select_by_ids(lf, participant_ids)
-        lf = add_mean(lf, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"])
-        save_csv(lf, filename.name)
-    print("Files processed successfully!")
+def process_obse(lf: pl.LazyFrame, headers: list[str], tz_rt_ts_headers_allowed=True) -> pl.LazyFrame:
+    lf = clean_lf(lf, headers, tz_rt_ts_headers_allowed)
+    participant_ids = select_valid_participants(lf)
+    lf = select_by_ids(lf, participant_ids)
+    return add_mean(lf, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"])
+
+
+def create_daily_means(lf: pl.LazyFrame) -> pl.LazyFrame:
+    max_days: pl.LazyFrame = (
+        lf.group_by("PARTICIPANT_ID")
+        .len()
+        .max()
+        .collect()
+        .to_dict(as_series=False)["len"][0]
+    )
+    dct = {"PARTICIPANT_ID": pl.String}
+    for day in range(1, max_days + 1):
+        dct["DAY_"+str(day)] = pl.Float64()
+    daily_means = pl.LazyFrame(schema=dct)
+    
+    return daily_means
+
