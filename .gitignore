@@ -262,4 +262,5 @@ ui-tests/.yarn/*
 ui-tests/.pnp.*
 
 resources/out/*/*
+resources/out/*
 resources/in/*
