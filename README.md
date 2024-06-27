@@ -15,6 +15,7 @@ python -m pip install --user pipx
 pipx install poetry
 poetry install
 ```
+Alternatively, you can follow the installation instructions from the [poetry website](https://python-poetry.org/docs/).
 
 Now that all dependencies are installed you can initiate a virtual environment by running the following command:
 
@@ -28,12 +29,4 @@ Keep note of the circled part, you will need it to select the kernel. In the rig
 
 ![No text, just deal with it](resources/img/select_kernel.png)
 
-## Usage
-
-### OBSE survery
-
-in src/obse_main.ipynb you will find the code for the OBSE survey. You shouldn't really need to know what the code does, you just need to run it once so it creates the necesarry directories. After that you can place the CSV files in the resources/in directory
-
- ![No](resources/img/indir.png)
-
-and run the code again to process the data. The results will be saved in the resources/out/afvar or obse directory, respectively.
+You should be good to go from now.
